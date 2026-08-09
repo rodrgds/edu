@@ -18,6 +18,12 @@ done
 
 node --check public/site-lib/scripts/webpage.js
 
+grep -Fq 'src="https://analytics.rgo.pt/script.js"' public/index.html
+grep -Fq 'data-website-id="01ab2edc-295f-49be-847c-c5d864a59106"' public/index.html
+grep -Fq 'data-domains="edu.rgo.pt"' public/index.html
+grep -Fq "script-src 'self' https://analytics.rgo.pt" public/_headers
+grep -Fq "connect-src 'self' https://analytics.rgo.pt" public/_headers
+
 node <<'NODE'
 const fs = require("node:fs");
 
