@@ -4,6 +4,8 @@
   const START_NODE_ID = "5ca11a74e4c8118e";
   const CANVAS_URL = "content/main.canvas";
   const SVG_NS = "http://www.w3.org/2000/svg";
+  const WHEEL_ZOOM_RATE = 0.0014;
+  const MAX_WHEEL_ZOOM_DELTA = 80;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -561,7 +563,6 @@
   function applyView(announce = false) {
     const { x, y, scale } = state.view;
     elements.world.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
-    elements.world.style.setProperty("--inverse-scale", String(1 / scale));
     elements.world.classList.toggle("is-overview", scale < 0.24);
     elements.zoom.value = `${Math.round(scale * 100)}%`;
     elements.zoom.textContent = elements.zoom.value;
@@ -671,22 +672,14 @@
 
   function setupPointerNavigation() {
     elements.viewport.addEventListener("wheel", (event) => {
-      const selectedBody = event.target.closest(".canvas-node.is-selected .node-body");
-      const canScrollBody = selectedBody && selectedBody.scrollHeight > selectedBody.clientHeight + 1;
-      if (canScrollBody && !event.ctrlKey && !event.metaKey && event.deltaY) {
-        const maxScroll = selectedBody.scrollHeight - selectedBody.clientHeight;
-        const scrollingUp = event.deltaY < 0 && selectedBody.scrollTop > 0;
-        const scrollingDown = event.deltaY > 0 && selectedBody.scrollTop < maxScroll;
-        if (scrollingUp || scrollingDown) {
-          event.preventDefault();
-          selectedBody.scrollTop += event.deltaY / state.view.scale;
-          return;
-        }
-      }
       event.preventDefault();
       cancelViewAnimation();
       if (event.ctrlKey || event.metaKey) {
-        zoomAt(event.clientX, event.clientY - elements.viewport.getBoundingClientRect().top, Math.exp(-event.deltaY * 0.008));
+        let delta = event.deltaY;
+        if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) delta *= 16;
+        if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) delta *= elements.viewport.clientHeight;
+        const boundedDelta = clamp(delta, -MAX_WHEEL_ZOOM_DELTA, MAX_WHEEL_ZOOM_DELTA);
+        zoomAt(event.clientX, event.clientY - elements.viewport.getBoundingClientRect().top, Math.exp(-boundedDelta * WHEEL_ZOOM_RATE));
       } else {
         state.view.x -= event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX;
         state.view.y -= event.shiftKey ? 0 : event.deltaY;
@@ -701,27 +694,15 @@
       elements.viewport.setPointerCapture(event.pointerId);
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (state.pointers.size === 1) {
-        const selectedBody = event.target.closest(".canvas-node.is-selected .node-body");
-        if (selectedBody && selectedBody.scrollHeight > selectedBody.clientHeight + 1) {
-          state.gesture = {
-            type: "node-scroll",
-            startX: event.clientX,
-            startY: event.clientY,
-            scrollTop: selectedBody.scrollTop,
-            body: selectedBody,
-            moved: false,
-          };
-        } else {
-          state.gesture = {
-            type: "pan",
-            startX: event.clientX,
-            startY: event.clientY,
-            viewX: state.view.x,
-            viewY: state.view.y,
-            moved: false,
-            nodeId: event.target.closest("[data-node-id]")?.dataset.nodeId || "",
-          };
-        }
+        state.gesture = {
+          type: "pan",
+          startX: event.clientX,
+          startY: event.clientY,
+          viewX: state.view.x,
+          viewY: state.view.y,
+          moved: false,
+          nodeId: event.target.closest("[data-node-id]")?.dataset.nodeId || "",
+        };
       } else if (state.pointers.size === 2) {
         const [a, b] = [...state.pointers.values()];
         const midX = (a.x + b.x) / 2;
@@ -735,17 +716,13 @@
           moved: true,
         };
       }
-      elements.viewport.classList.toggle("is-panning", state.gesture.type !== "node-scroll");
+      elements.viewport.classList.add("is-panning");
     });
 
     elements.viewport.addEventListener("pointermove", (event) => {
       if (!state.pointers.has(event.pointerId) || !state.gesture) return;
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (state.gesture.type === "node-scroll" && state.pointers.size === 1) {
-        const dy = event.clientY - state.gesture.startY;
-        if (Math.abs(dy) > 3) state.gesture.moved = true;
-        state.gesture.body.scrollTop = state.gesture.scrollTop - dy / state.view.scale;
-      } else if (state.gesture.type === "pan" && state.pointers.size === 1) {
+      if (state.gesture.type === "pan" && state.pointers.size === 1) {
         const dx = event.clientX - state.gesture.startX;
         const dy = event.clientY - state.gesture.startY;
         if (Math.hypot(dx, dy) > 3) state.gesture.moved = true;

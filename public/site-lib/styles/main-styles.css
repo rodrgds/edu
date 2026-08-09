@@ -139,16 +139,6 @@ svg {
   text-decoration: none;
 }
 
-.brand::after {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin: 0 0 9px 3px;
-  border-radius: 50%;
-  background: var(--accent);
-  content: "";
-}
-
 .topbar-context {
   min-width: 0;
   margin: 0;
@@ -344,14 +334,6 @@ svg {
   font-size: 16px;
   line-height: 1.52;
   overflow-wrap: anywhere;
-}
-
-.canvas-node.is-selected .markdown {
-  font-size: clamp(12px, calc(16px * var(--inverse-scale, 1)), 26px);
-}
-
-.canvas-node.is-selected[data-node-id="5ca11a74e4c8118e"] .markdown {
-  font-size: clamp(12px, calc(16px * var(--inverse-scale, 1)), 20px);
 }
 
 .markdown > :first-child {

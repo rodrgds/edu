@@ -18,7 +18,7 @@ The site publishes the project's JSON Canvas as a fast, accessible, public explo
 
 ## Positioning
 
-The argument remains spatial and connected instead of being flattened into a conventional article or trapped inside an Obsidian export.
+The public identity is `edu.rgo.pt`: a research map on higher education. The argument remains spatial and connected instead of being flattened into a conventional article or trapped inside an Obsidian export.
 
 ## Brand Personality
 
@@ -26,7 +26,7 @@ Direct, provocative, and intellectually serious. The interface should feel confi
 
 ## Anti-references
 
-Do not reproduce the heavy, slow, visually noisy Obsidian HTML export. Do not imitate the earlier `unis-bad` experiment or turn the canvas into a generic marketing landing page.
+Do not reproduce the heavy, slow, visually noisy Obsidian HTML export. Do not revive the former slogan-like project name or turn the canvas into a generic marketing landing page.
 
 ## Design Principles
 
