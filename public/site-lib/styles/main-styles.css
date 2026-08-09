@@ -347,7 +347,11 @@ svg {
 }
 
 .canvas-node.is-selected .markdown {
-  font-size: clamp(12px, calc(16px * var(--inverse-scale, 1)), 36px);
+  font-size: clamp(12px, calc(16px * var(--inverse-scale, 1)), 26px);
+}
+
+.canvas-node.is-selected[data-node-id="5ca11a74e4c8118e"] .markdown {
+  font-size: clamp(12px, calc(16px * var(--inverse-scale, 1)), 20px);
 }
 
 .markdown > :first-child {

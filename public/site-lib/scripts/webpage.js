@@ -140,8 +140,12 @@
         }
         const callout = quoteLines[0]?.match(/^\[!([^\]]+)]\s*(.*)$/);
         if (callout) {
-          const rest = [callout[2], ...quoteLines.slice(1)].filter(Boolean).join(" ");
-          output.push(`<blockquote><span class="callout-title">${renderInlineMarkdown(callout[1])}</span>${rest ? `<p>${renderInlineMarkdown(rest)}</p>` : ""}</blockquote>`);
+          const restLines = [callout[2], ...quoteLines.slice(1)];
+          const hasContent = restLines.some(Boolean);
+          const content = callout[1].toLocaleLowerCase() === "poem"
+            ? restLines.map((line) => line ? renderInlineMarkdown(line) : "").join("<br>")
+            : renderInlineMarkdown(restLines.filter(Boolean).join(" "));
+          output.push(`<blockquote><span class="callout-title">${renderInlineMarkdown(callout[1])}</span>${hasContent ? `<p>${content}</p>` : ""}</blockquote>`);
         } else {
           output.push(`<blockquote><p>${renderInlineMarkdown(quoteLines.join(" "))}</p></blockquote>`);
         }
@@ -667,6 +671,18 @@
 
   function setupPointerNavigation() {
     elements.viewport.addEventListener("wheel", (event) => {
+      const selectedBody = event.target.closest(".canvas-node.is-selected .node-body");
+      const canScrollBody = selectedBody && selectedBody.scrollHeight > selectedBody.clientHeight + 1;
+      if (canScrollBody && !event.ctrlKey && !event.metaKey && event.deltaY) {
+        const maxScroll = selectedBody.scrollHeight - selectedBody.clientHeight;
+        const scrollingUp = event.deltaY < 0 && selectedBody.scrollTop > 0;
+        const scrollingDown = event.deltaY > 0 && selectedBody.scrollTop < maxScroll;
+        if (scrollingUp || scrollingDown) {
+          event.preventDefault();
+          selectedBody.scrollTop += event.deltaY / state.view.scale;
+          return;
+        }
+      }
       event.preventDefault();
       cancelViewAnimation();
       if (event.ctrlKey || event.metaKey) {
@@ -685,15 +701,27 @@
       elements.viewport.setPointerCapture(event.pointerId);
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (state.pointers.size === 1) {
-        state.gesture = {
-          type: "pan",
-          startX: event.clientX,
-          startY: event.clientY,
-          viewX: state.view.x,
-          viewY: state.view.y,
-          moved: false,
-          nodeId: event.target.closest("[data-node-id]")?.dataset.nodeId || "",
-        };
+        const selectedBody = event.target.closest(".canvas-node.is-selected .node-body");
+        if (selectedBody && selectedBody.scrollHeight > selectedBody.clientHeight + 1) {
+          state.gesture = {
+            type: "node-scroll",
+            startX: event.clientX,
+            startY: event.clientY,
+            scrollTop: selectedBody.scrollTop,
+            body: selectedBody,
+            moved: false,
+          };
+        } else {
+          state.gesture = {
+            type: "pan",
+            startX: event.clientX,
+            startY: event.clientY,
+            viewX: state.view.x,
+            viewY: state.view.y,
+            moved: false,
+            nodeId: event.target.closest("[data-node-id]")?.dataset.nodeId || "",
+          };
+        }
       } else if (state.pointers.size === 2) {
         const [a, b] = [...state.pointers.values()];
         const midX = (a.x + b.x) / 2;
@@ -707,13 +735,17 @@
           moved: true,
         };
       }
-      elements.viewport.classList.add("is-panning");
+      elements.viewport.classList.toggle("is-panning", state.gesture.type !== "node-scroll");
     });
 
     elements.viewport.addEventListener("pointermove", (event) => {
       if (!state.pointers.has(event.pointerId) || !state.gesture) return;
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-      if (state.gesture.type === "pan" && state.pointers.size === 1) {
+      if (state.gesture.type === "node-scroll" && state.pointers.size === 1) {
+        const dy = event.clientY - state.gesture.startY;
+        if (Math.abs(dy) > 3) state.gesture.moved = true;
+        state.gesture.body.scrollTop = state.gesture.scrollTop - dy / state.view.scale;
+      } else if (state.gesture.type === "pan" && state.pointers.size === 1) {
         const dx = event.clientX - state.gesture.startX;
         const dy = event.clientY - state.gesture.startY;
         if (Math.hypot(dx, dy) > 3) state.gesture.moved = true;
@@ -853,9 +885,9 @@
   }
 
   function renderReader() {
-    const sorted = [...state.canvas.nodes].sort((a, b) => a.y - b.y || a.x - b.x);
+    const ordered = [...state.canvas.nodes];
     const fragment = document.createDocumentFragment();
-    sorted.forEach((node) => fragment.append(readerItem(node)));
+    ordered.forEach((node) => fragment.append(readerItem(node)));
     elements.readerList.append(fragment);
 
     const filter = () => {
