@@ -1,4 +1,4 @@
-name: Verify and deploy
+name: Verify static site
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: edu-production
+  group: edu-verification
   cancel-in-progress: true
 
 jobs:
@@ -18,30 +18,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify the static site
-        run: |
-          set -euo pipefail
-          git diff --check
-          test -s index.html
-          test -s main.html
-          test -s site-lib/scripts/webpage.js
-          test -s site-lib/styles/main-styles.css
-
-  deploy-production:
-    name: Deploy production
-    runs-on: ubuntu-latest
-    needs: verify
-    steps:
-      - name: Trigger the verified VPS deployment
-        env:
-          DEPLOY_WEBHOOK_SECRET: ${{ secrets.DEPLOY_WEBHOOK_SECRET }}
-        run: |
-          set -euo pipefail
-          payload=$(printf '{"repository":"%s","sha":"%s"}' "$GITHUB_REPOSITORY" "$GITHUB_SHA")
-          signature=$(printf '%s' "$payload" | openssl dgst -sha256 -hmac "$DEPLOY_WEBHOOK_SECRET" | awk '{print "sha256=" $2}')
-          response=$(curl --fail-with-body --silent --show-error \
-            -H 'Content-Type: application/json' \
-            -H "X-Hub-Signature-256: $signature" \
-            --data "$payload" \
-            https://webhooks.rgo.pt/hooks/deploy-edu)
-          printf '%s\n' "$response"
-          grep -q 'DEPLOY_OK edu' <<<"$response"
+        run: bash scripts/verify-site.sh

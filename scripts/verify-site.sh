@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+git diff --check
+
+required_files=(
+  public/index.html
+  public/main.html
+  public/site-lib/scripts/webpage.js
+  public/site-lib/styles/main-styles.css
+  public/site-lib/media/favicon.svg
+  public/content/main.canvas
+)
+
+for required_file in "${required_files[@]}"; do
+  test -s "$required_file"
+done
+
+node --check public/site-lib/scripts/webpage.js
+
+node <<'NODE'
+const fs = require("node:fs");
+
+const canvas = JSON.parse(fs.readFileSync("public/content/main.canvas", "utf8"));
+const errors = [];
+const nodeIds = new Set();
+const allIds = new Set();
+
+if (!Array.isArray(canvas.nodes) || !Array.isArray(canvas.edges)) {
+  throw new Error("Canvas must contain node and edge arrays.");
+}
+
+for (const node of canvas.nodes) {
+  if (!node.id || allIds.has(node.id)) errors.push(`Duplicate or missing node ID: ${node.id || "unknown"}`);
+  allIds.add(node.id);
+  nodeIds.add(node.id);
+}
+
+for (const edge of canvas.edges) {
+  if (!edge.id || allIds.has(edge.id)) errors.push(`Duplicate or missing edge ID: ${edge.id || "unknown"}`);
+  allIds.add(edge.id);
+  if (!nodeIds.has(edge.fromNode) || !nodeIds.has(edge.toNode)) errors.push(`Dangling edge: ${edge.id}`);
+}
+
+if (errors.length) throw new Error(errors.join("\n"));
+console.log(`Verified ${canvas.nodes.length} nodes and ${canvas.edges.length} edges.`);
+NODE
