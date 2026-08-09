@@ -227,7 +227,7 @@
 
     if (videoId) title = "Video source";
     else if (domain === "news.ycombinator.com") title = "Hacker News discussion";
-    else if (domain === "cs.stanford.edu" && parsed.pathname.endsWith("advice.html")) title = "Advice for students — Andrej Karpathy";
+    else if (domain === "cs.stanford.edu" && parsed.pathname.endsWith("advice.html")) title = "Advice for students: Andrej Karpathy";
     else title = titleFromSlug(parsed.pathname.split("/").filter(Boolean).at(-1));
 
     return {
