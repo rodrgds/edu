@@ -4,7 +4,7 @@ This repository is the static source for `https://edu.rgo.pt/`. Keep the existin
 
 ## Verification and push-to-deploy
 
-Pushes to `main` are deployed automatically by the Git-integrated Cloudflare Pages project `edu`. Cloudflare uses `main` as the production branch, runs `bash scripts/verify-site.sh`, and publishes `public/`; other branches receive preview deployments. The custom production domain is `edu.rgo.pt`.
+Pushes to `main` are deployed automatically by the Git-integrated Cloudflare Pages project `edu`. Cloudflare uses `main` as the production branch, runs `bash scripts/verify-site.sh`, and publishes `public/`; other branches receive preview deployments. The custom production domain is `edu.rgo.pt`, with `https://edu-6em.pages.dev/` as the direct Pages fallback.
 
 GitHub also runs `.github/workflows/deploy.yml` as an independent verification check. Keep the GitHub and Cloudflare gates pointed at the same `scripts/verify-site.sh` entrypoint so their acceptance criteria cannot drift.
 
