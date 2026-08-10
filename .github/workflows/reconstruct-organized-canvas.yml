@@ -71,7 +71,7 @@ jobs:
 
           expected_size = 67265
           expected_sha256 = "8a4a4508d19d301fa604abd9f09358b581469d560d7a647c6f8b110c0b122477"
-          expected_git_blob = "c0e642399b52c4b4890ab4943958c04f949ac71d"
+          expected_git_blob = "92224cfa9fed879fa8329793ea9897b4e32272ec"
 
           if len(canvas) != expected_size:
               raise SystemExit(f"Unexpected canvas size: {len(canvas)}")
