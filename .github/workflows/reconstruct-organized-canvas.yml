@@ -1,0 +1,123 @@
+name: Reconstruct organized canvas
+
+on:
+  push:
+    branches:
+      - agent/organize-education-canvas
+    paths:
+      - .github/workflows/reconstruct-organized-canvas.yml
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/organize-education-canvas
+          fetch-depth: 0
+
+      - name: Reconstruct and validate canvas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python <<'PY'
+          import base64
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          from urllib.request import Request, urlopen
+
+          blob_shas = [
+              "59dadd9815a7469f608ef72910075c3583911abe",
+              "9ab31335bf9964799ba31b4016ed94203b754608",
+              "5549c429bc777e0fd668152395eed83e6671d1f8",
+              "5a78e2c8348d6f208f5beae2a1468cf35d2baf8f",
+              "c72cbd5dededff570a11ac2e12ff9e18a1865599",
+              "328bf5886d0df664e7ba743045d985010625a0fc",
+              "cab86b45a57b8563500fb1ca2c848737bd77c741",
+              "3ea5e365bc33108798c6d34f8625ac6557d1b248",
+              "fb9057cd64449b5b14b767b9158bbcdac85b2c1e",
+              "76d6eae89489965a0440f2b992a3c177bac60a45",
+              "090bbf323e287f17e4e774463e1594481c2d547b",
+              "527966c062c128c75f9d1326d110baf419df45b5",
+              "3461fefb6168e8bd775d190428ff71f77bf42e8e",
+              "cec00aa12bf915b34628c743c5fd453b557d2278",
+              "89263e590bf2d321cf58263c7d41e4cebdb787cf",
+          ]
+
+          repository = os.environ["REPOSITORY"]
+          token = os.environ["GH_TOKEN"]
+          canvas = bytearray()
+
+          for sha in blob_shas:
+              request = Request(
+                  f"https://api.github.com/repos/{repository}/git/blobs/{sha}",
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "edu-canvas-reconstructor",
+                  },
+              )
+              with urlopen(request) as response:
+                  payload = json.load(response)
+              canvas.extend(base64.b64decode(payload["content"]))
+
+          expected_size = 67265
+          expected_sha256 = "8a4a4508d19d301fa604abd9f09358b581469d560d7a647c6f8b110c0b122477"
+          expected_git_blob = "c0e642399b52c4b4890ab4943958c04f949ac71d"
+
+          if len(canvas) != expected_size:
+              raise SystemExit(f"Unexpected canvas size: {len(canvas)}")
+
+          sha256 = hashlib.sha256(canvas).hexdigest()
+          if sha256 != expected_sha256:
+              raise SystemExit(f"Unexpected canvas SHA-256: {sha256}")
+
+          git_blob = hashlib.sha1(
+              b"blob " + str(len(canvas)).encode() + b"\0" + canvas
+          ).hexdigest()
+          if git_blob != expected_git_blob:
+              raise SystemExit(f"Unexpected Git blob SHA: {git_blob}")
+
+          data = json.loads(canvas.decode("utf-8"))
+          nodes = data.get("nodes", [])
+          edges = data.get("edges", [])
+
+          if len(nodes) != 119:
+              raise SystemExit(f"Expected 119 nodes, found {len(nodes)}")
+          if len(edges) != 71:
+              raise SystemExit(f"Expected 71 edges, found {len(edges)}")
+
+          all_ids = [node["id"] for node in nodes] + [edge["id"] for edge in edges]
+          if len(all_ids) != len(set(all_ids)):
+              raise SystemExit("Canvas contains duplicate node or edge IDs")
+
+          node_ids = {node["id"] for node in nodes}
+          for edge in edges:
+              if edge["fromNode"] not in node_ids or edge["toNode"] not in node_ids:
+                  raise SystemExit(f"Dangling edge reference: {edge['id']}")
+
+          output = Path("public/content/main.canvas")
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_bytes(canvas)
+          print(f"Validated {len(nodes)} nodes, {len(edges)} edges, SHA-256 {sha256}")
+          PY
+
+      - name: Verify site
+        run: bash scripts/verify-site.sh
+
+      - name: Commit organized canvas and remove one-use workflow
+        run: |
+          rm .github/workflows/reconstruct-organized-canvas.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Organize higher education canvas"
+          git push origin HEAD:agent/organize-education-canvas
