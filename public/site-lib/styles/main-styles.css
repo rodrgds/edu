@@ -1,42 +1,61 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y9H6as8bTXq_nANBjzKo3IeZx8z6up5BeSl5jBNz_19PpbpMXuECpwUxJBOm_OJWiawA1XphjhQYg.woff2") format("woff2");
+}
+
 :root {
   color-scheme: light;
-  --bg: oklch(1 0 0);
-  --surface: oklch(0.972 0.005 230);
-  --surface-strong: oklch(0.94 0.008 230);
-  --ink: oklch(0.18 0.015 230);
-  --ink-soft: oklch(0.44 0.018 230);
-  --line: oklch(0.86 0.01 230);
-  --line-strong: oklch(0.68 0.025 230);
-  --primary: oklch(0.55 0.105 230);
-  --primary-strong: oklch(0.43 0.115 230);
-  --accent: oklch(0.62 0.16 25);
-  --focus: oklch(0.66 0.15 230);
-  --scrim: oklch(0.12 0.01 230 / 0.42);
-  --canvas-dot: oklch(0.72 0.012 230 / 0.35);
+  --bg: #fcf2c7;
+  --surface: #fcf2c7;
+  --surface-strong: #f2e6bd;
+  --surface-active: #ebd9b3;
+  --ink: #282828;
+  --ink-soft: #786c61;
+  --ink-faint: #a89a85;
+  --line: #ebdbb2;
+  --line-strong: #bdae93;
+  --primary: #d65d0e;
+  --primary-strong: #b6480b;
+  --accent: #d79921;
+  --focus: #d65d0e;
+  --scrim: rgb(40 40 40 / 0.42);
+  --canvas-dot: #d5c4a1;
+  --callout-default: 43 111 114;
+  --callout-warning: 182 72 11;
+  --callout-quote: 105 105 105;
   --topbar-height: 64px;
-  --radius-s: 8px;
-  --radius-m: 12px;
+  --radius-s: 4px;
+  --radius-m: 8px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Bricolage Grotesque", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: oklch(0.12 0 0);
-  --surface: oklch(0.17 0.007 230);
-  --surface-strong: oklch(0.22 0.01 230);
-  --ink: oklch(0.94 0.006 230);
-  --ink-soft: oklch(0.72 0.015 230);
-  --line: oklch(0.3 0.012 230);
-  --line-strong: oklch(0.46 0.025 230);
-  --primary: oklch(0.68 0.11 230);
-  --primary-strong: oklch(0.78 0.095 230);
-  --accent: oklch(0.72 0.15 25);
-  --focus: oklch(0.76 0.13 230);
-  --scrim: oklch(0.04 0 0 / 0.7);
-  --canvas-dot: oklch(0.44 0.012 230 / 0.28);
+  --bg: #282828;
+  --surface: #282828;
+  --surface-strong: #1e2021;
+  --surface-active: #3e393780;
+  --ink: #fbf1c7;
+  --ink-soft: #bdae93;
+  --ink-faint: #7c6f64;
+  --line: #3c3836;
+  --line-strong: #665c54;
+  --primary: #d65d0e;
+  --primary-strong: #fe8019;
+  --accent: #d79921;
+  --focus: #fe8019;
+  --scrim: rgb(30 32 33 / 0.72);
+  --canvas-dot: #504945;
+  --callout-default: 131 165 152;
+  --callout-warning: 254 128 25;
+  --callout-quote: 158 158 158;
 }
 
 * {
@@ -172,7 +191,7 @@ svg {
 .icon-button:hover,
 .text-button:hover,
 .canvas-controls button:hover {
-  background: var(--surface-strong);
+  background: var(--surface-active);
 }
 
 .icon-button:active,
@@ -230,9 +249,9 @@ svg {
   touch-action: none;
   cursor: grab;
   background-color: var(--bg);
-  background-image: radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--canvas-dot) 0.7px, transparent 0.7px);
   background-position: 0 0;
-  background-size: 24px 24px;
+  background-size: 10px 10px;
   overscroll-behavior: none;
 }
 
@@ -266,7 +285,7 @@ svg {
   fill: none;
   stroke: var(--edge-color, var(--line-strong));
   stroke-linecap: round;
-  stroke-width: 3;
+  stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
@@ -287,9 +306,9 @@ svg {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid color-mix(in oklch, var(--node-accent) 54%, var(--line));
+  border: 1.5px solid var(--line-strong);
   border-radius: var(--radius-m);
-  background: color-mix(in oklch, var(--node-accent) 4%, var(--surface));
+  background: var(--surface);
   color: var(--ink);
   cursor: default;
   contain: layout paint style;
@@ -297,22 +316,25 @@ svg {
 }
 
 .canvas-node:hover {
-  border-color: color-mix(in oklch, var(--node-accent) 76%, var(--line-strong));
+  border-color: var(--ink-faint);
 }
 
 .canvas-node.is-selected {
-  outline: 4px solid color-mix(in oklch, var(--primary) 65%, transparent);
-  outline-offset: 4px;
+  border-color: var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--primary) 75%, transparent);
+  outline-offset: 2px;
 }
 
 .canvas-node[data-color]:not([data-color=""]) {
-  background: color-mix(in oklch, var(--node-accent) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--node-accent) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--node-accent) 70%, transparent);
+  background: color-mix(in srgb, var(--node-accent) 7%, var(--surface));
 }
 
 .node-body {
   width: 100%;
   height: 100%;
-  padding: 18px 20px;
+  padding: 16px;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
@@ -327,12 +349,12 @@ svg {
 
 .canvas-world.is-overview .canvas-node {
   border-width: 2px;
-  background: color-mix(in oklch, var(--node-accent) 28%, var(--surface));
+  background: color-mix(in srgb, var(--node-accent) 28%, var(--surface));
 }
 
 .markdown {
-  font-size: 16px;
-  line-height: 1.52;
+  font-size: 17px;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
@@ -348,60 +370,102 @@ svg {
 .markdown h2,
 .markdown h3,
 .markdown h4 {
-  margin: 1em 0 0.46em;
+  margin: 1.75rem 0;
   color: var(--ink);
-  font-weight: 780;
-  letter-spacing: -0.028em;
-  line-height: 1.14;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
   text-wrap: balance;
 }
 
-.markdown h1 { font-size: 1.85em; }
-.markdown h2 { font-size: 1.52em; }
-.markdown h3 { font-size: 1.24em; }
-.markdown h4 { font-size: 1.08em; }
+.markdown h1 { font-size: 1.125em; font-weight: 600; }
+.markdown h2 { font-size: 1.05em; font-weight: 600; }
+.markdown h3 { font-size: 1em; font-weight: 500; }
+.markdown h4 { font-size: 0.9em; font-weight: 500; }
 
 .markdown p {
-  margin: 0.62em 0;
+  margin: 1.75rem 0;
   text-wrap: pretty;
 }
 
 .markdown ul,
 .markdown ol {
-  margin: 0.58em 0;
-  padding-left: 1.4em;
+  margin: 0.075em 0;
+  padding-left: 2em;
 }
 
 .markdown li + li {
-  margin-top: 0.28em;
+  margin-top: 0.075em;
 }
 
 .markdown blockquote {
-  margin: 0.8em 0;
-  padding: 0.72em 0.85em;
-  border: 1px solid color-mix(in oklch, var(--primary) 30%, var(--line));
+  margin: 1em 0;
+  padding-inline-start: 1.1em;
+  border-inline-start: 1px solid var(--line-strong);
+  color: inherit;
+}
+
+.markdown .callout {
+  --callout-color: var(--callout-default);
+  margin: 1em 0;
+  overflow: hidden;
+  padding: 12px 12px 12px 24px;
   border-radius: var(--radius-s);
-  background: color-mix(in oklch, var(--primary) 7%, var(--surface));
-  color: var(--ink-soft);
+  background: rgb(var(--callout-color) / 0.1);
+}
+
+.markdown .callout[data-callout="attention"],
+.markdown .callout[data-callout="caution"],
+.markdown .callout[data-callout="warning"] {
+  --callout-color: var(--callout-warning);
+}
+
+.markdown .callout[data-callout="cite"],
+.markdown .callout[data-callout="quote"] {
+  --callout-color: var(--callout-quote);
 }
 
 .markdown .callout-title {
-  display: block;
-  margin-bottom: 0.4em;
-  color: var(--primary-strong);
-  font-weight: 760;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  color: rgb(var(--callout-color));
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown .callout-title svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.75;
+}
+
+.markdown .callout:is([data-callout="cite"], [data-callout="quote"]) .callout-title svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.markdown .callout-content {
+  overflow-x: auto;
+}
+
+.markdown .callout-content p {
+  margin-block: 1em 0;
 }
 
 .markdown mark {
-  padding: 0.04em 0.12em;
-  border-radius: 3px;
-  background: color-mix(in oklch, var(--accent) 20%, transparent);
+  padding: 0;
+  background: rgb(215 153 33 / 0.4);
   color: inherit;
 }
 
 .markdown a {
   color: var(--primary-strong);
-  font-weight: 650;
+  font-weight: inherit;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.16em;
 }
@@ -414,7 +478,7 @@ svg {
   padding: 0.1em 0.28em;
   border-radius: 4px;
   background: var(--surface-strong);
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-family: "JetBrainsMono Nerd Font", ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 0.88em;
 }
 
@@ -555,7 +619,7 @@ button.link-placeholder {
 
 .link-action:hover {
   border-color: var(--line-strong);
-  background: var(--surface-strong);
+  background: var(--surface-active);
 }
 
 .link-action svg {
@@ -872,7 +936,7 @@ dialog::backdrop {
 
 .reader-item .reader-map-action:hover {
   border-color: var(--line-strong);
-  background: var(--surface-strong);
+  background: var(--surface-active);
 }
 
 .reader-title,

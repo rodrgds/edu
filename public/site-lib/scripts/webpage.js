@@ -4,6 +4,7 @@
   const START_NODE_ID = "5ca11a74e4c8118e";
   const CANVAS_URL = "content/main.canvas";
   const SVG_NS = "http://www.w3.org/2000/svg";
+  const GRID_SIZE = 10;
   const WHEEL_ZOOM_RATE = 0.0014;
   const MAX_WHEEL_ZOOM_DELTA = 80;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -41,12 +42,12 @@
   };
 
   const canvasColors = {
-    "1": "oklch(0.62 0.16 25)",
-    "2": "oklch(0.7 0.15 62)",
-    "3": "oklch(0.79 0.14 91)",
-    "4": "oklch(0.62 0.12 151)",
-    "5": "oklch(0.66 0.11 215)",
-    "6": "oklch(0.6 0.13 300)",
+    "1": "#cc241d",
+    "2": "#d65d0e",
+    "3": "#d79921",
+    "4": "#98971a",
+    "5": "#689d6a",
+    "6": "#b16286",
   };
 
   function setTheme(theme, persist = false) {
@@ -112,6 +113,62 @@
     return html;
   }
 
+  function calloutIconMarkup(type) {
+    if (["attention", "caution", "warning"].includes(type)) {
+      return '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10.3 3.6 2.2 18a2 2 0 0 0 1.75 3h16.1a2 2 0 0 0 1.75-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
+    }
+    if (["cite", "quote"].includes(type)) {
+      return '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2H4c-1.25 0-2 .75-2 2v4c0 1.25.75 2 2 2h3c0 4-2 6-4 7v3ZM14 21c3 0 7-1 7-8V5c0-1.25-.75-2-2-2h-4c-1.25 0-2 .75-2 2v4c0 1.25.75 2 2 2h3c0 4-2 6-4 7v3Z"/></svg>';
+    }
+    return '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.98-3.98L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.63L7 20.66a2 2 0 0 0 .83-.5Z"/><path d="m15 5 4 4"/></svg>';
+  }
+
+  function renderCallout(calloutType, title, lines) {
+    const type = calloutType.toLocaleLowerCase().replace(/\s+/g, "-");
+    const contentLines = [...lines];
+    while (contentLines[0] === "") contentLines.shift();
+    while (contentLines.at(-1) === "") contentLines.pop();
+    const content = type === "poem"
+      ? contentLines.map((line) => line ? renderInlineMarkdown(line) : "").join("<br>")
+      : renderInlineMarkdown(contentLines.filter(Boolean).join(" "));
+    const contentMarkup = contentLines.some(Boolean) ? `<div class="callout-content"><p>${content}</p></div>` : "";
+    return `<aside class="callout" data-callout="${escapeHtml(type)}"><div class="callout-title">${calloutIconMarkup(type)}<span>${renderInlineMarkdown(title)}</span></div>${contentMarkup}</aside>`;
+  }
+
+  function listLine(value) {
+    const match = String(value).match(/^(\s*)([-+*]|\d+[.)])\s+(.+)$/);
+    if (!match) return null;
+    return {
+      indent: match[1].replaceAll("\t", "    ").length,
+      ordered: /^\d/.test(match[2]),
+      content: match[3],
+    };
+  }
+
+  function renderList(lines, startIndex, baseIndent) {
+    const ordered = listLine(lines[startIndex]).ordered;
+    const tag = ordered ? "ol" : "ul";
+    const items = [];
+    let index = startIndex;
+
+    while (index < lines.length) {
+      const item = listLine(lines[index]);
+      if (!item || item.indent !== baseIndent || item.ordered !== ordered) break;
+      index += 1;
+      let nested = "";
+      while (index < lines.length) {
+        const child = listLine(lines[index]);
+        if (!child || child.indent <= baseIndent) break;
+        const rendered = renderList(lines, index, child.indent);
+        nested += rendered.html;
+        index = rendered.index;
+      }
+      items.push(`<li>${renderInlineMarkdown(item.content)}${nested}</li>`);
+    }
+
+    return { html: `<${tag}>${items.join("")}</${tag}>`, index };
+  }
+
   function renderMarkdown(markdown) {
     const lines = String(markdown).replace(/\r\n?/g, "\n").split("\n");
     const output = [];
@@ -137,35 +194,25 @@
       if (/^>\s?/.test(trimmed)) {
         const quoteLines = [];
         while (index < lines.length && /^>\s?/.test(lines[index].trim())) {
-          quoteLines.push(lines[index].trim().replace(/^>\s?/, ""));
+          quoteLines.push(lines[index].replace(/^\s*>\s?/, ""));
           index += 1;
         }
         const callout = quoteLines[0]?.match(/^\[!([^\]]+)]\s*(.*)$/);
         if (callout) {
           const restLines = [callout[2], ...quoteLines.slice(1)];
-          const hasContent = restLines.some(Boolean);
-          const content = callout[1].toLocaleLowerCase() === "poem"
-            ? restLines.map((line) => line ? renderInlineMarkdown(line) : "").join("<br>")
-            : renderInlineMarkdown(restLines.filter(Boolean).join(" "));
-          output.push(`<blockquote><span class="callout-title">${renderInlineMarkdown(callout[1])}</span>${hasContent ? `<p>${content}</p>` : ""}</blockquote>`);
+          const title = callout[1].charAt(0).toLocaleUpperCase() + callout[1].slice(1);
+          output.push(renderCallout(callout[1], title, restLines));
         } else {
-          output.push(`<blockquote><p>${renderInlineMarkdown(quoteLines.join(" "))}</p></blockquote>`);
+          output.push(`<blockquote>${renderMarkdown(quoteLines.join("\n"))}</blockquote>`);
         }
         continue;
       }
 
-      const listItem = trimmed.match(/^([-+*]|\d+[.)])\s+(.+)$/);
+      const listItem = listLine(raw);
       if (listItem) {
-        const ordered = /^\d/.test(listItem[1]);
-        const tag = ordered ? "ol" : "ul";
-        const items = [];
-        while (index < lines.length) {
-          const match = lines[index].trim().match(/^([-+*]|\d+[.)])\s+(.+)$/);
-          if (!match || /^\d/.test(match[1]) !== ordered) break;
-          items.push(`<li>${renderInlineMarkdown(match[2])}</li>`);
-          index += 1;
-        }
-        output.push(`<${tag}>${items.join("")}</${tag}>`);
+        const rendered = renderList(lines, index, listItem.indent);
+        output.push(rendered.html);
+        index = rendered.index;
         continue;
       }
 
@@ -173,7 +220,7 @@
       index += 1;
       while (index < lines.length) {
         const next = lines[index].trim();
-        if (!next || /^(#{1,4})\s+/.test(next) || /^>\s?/.test(next) || /^([-+*]|\d+[.)])\s+/.test(next)) break;
+        if (!next || /^(#{1,4})\s+/.test(next) || /^>\s?/.test(next) || listLine(lines[index])) break;
         paragraph.push(next);
         index += 1;
       }
@@ -566,7 +613,7 @@
     elements.world.classList.toggle("is-overview", scale < 0.24);
     elements.zoom.value = `${Math.round(scale * 100)}%`;
     elements.zoom.textContent = elements.zoom.value;
-    const grid = 24 * scale;
+    const grid = GRID_SIZE * scale;
     elements.viewport.style.backgroundSize = `${grid}px ${grid}px`;
     elements.viewport.style.backgroundPosition = `${x % grid}px ${y % grid}px`;
     updateMinimapViewport();

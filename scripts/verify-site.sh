@@ -23,6 +23,11 @@ grep -Fq 'data-website-id="01ab2edc-295f-49be-847c-c5d864a59106"' public/index.h
 grep -Fq 'data-domains="edu.rgo.pt"' public/index.html
 grep -Fq "script-src 'self' https://analytics.rgo.pt" public/_headers
 grep -Fq "connect-src 'self' https://analytics.rgo.pt" public/_headers
+grep -Fq "font-src 'self' https://fonts.gstatic.com" public/_headers
+grep -Fq -- '--bg: #fcf2c7' public/site-lib/styles/main-styles.css
+grep -Fq -- '--bg: #282828' public/site-lib/styles/main-styles.css
+grep -Fq 'font-family: "Bricolage Grotesque"' public/site-lib/styles/main-styles.css
+grep -Fq 'data-callout=' public/site-lib/scripts/webpage.js
 
 node <<'NODE'
 const fs = require("node:fs");
