@@ -24,8 +24,9 @@ grep -Fq 'data-domains="edu.rgo.pt"' public/index.html
 grep -Fq "script-src 'self' https://analytics.rgo.pt" public/_headers
 grep -Fq "connect-src 'self' https://analytics.rgo.pt" public/_headers
 grep -Fq "font-src 'self' https://fonts.gstatic.com" public/_headers
-grep -Fq -- '--bg: #fcf2c7' public/site-lib/styles/main-styles.css
-grep -Fq -- '--bg: #282828' public/site-lib/styles/main-styles.css
+grep -Fq -- '--bg: #fffcf0' public/site-lib/styles/main-styles.css
+grep -Fq -- '--bg: #100f0f' public/site-lib/styles/main-styles.css
+grep -Fq -- '--canvas-cyan: #24837b' public/site-lib/styles/main-styles.css
 grep -Fq 'font-family: "Bricolage Grotesque"' public/site-lib/styles/main-styles.css
 grep -Fq 'data-callout=' public/site-lib/scripts/webpage.js
 

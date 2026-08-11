@@ -8,24 +8,32 @@
 
 :root {
   color-scheme: light;
-  --bg: #fcf2c7;
-  --surface: #fcf2c7;
-  --surface-strong: #f2e6bd;
-  --surface-active: #ebd9b3;
-  --ink: #282828;
-  --ink-soft: #786c61;
-  --ink-faint: #a89a85;
-  --line: #ebdbb2;
-  --line-strong: #bdae93;
-  --primary: #d65d0e;
-  --primary-strong: #b6480b;
-  --accent: #d79921;
-  --focus: #d65d0e;
-  --scrim: rgb(40 40 40 / 0.42);
-  --canvas-dot: #d5c4a1;
-  --callout-default: 43 111 114;
-  --callout-warning: 182 72 11;
-  --callout-quote: 105 105 105;
+  --bg: #fffcf0;
+  --surface: #fffcf0;
+  --surface-strong: #f2f0e5;
+  --surface-active: rgb(16 15 15 / 0.05);
+  --ink: #100f0f;
+  --ink-soft: #6f6e69;
+  --ink-faint: #b7b5ac;
+  --line: #e6e4d9;
+  --line-hover: #dad8ce;
+  --line-strong: #cecdc3;
+  --primary: hsl(175 57% 39%);
+  --primary-strong: #24837b;
+  --accent: #ad8301;
+  --focus: hsl(175 57% 39%);
+  --scrim: rgb(16 15 15 / 0.42);
+  --canvas-dot: #dad8ce;
+  --canvas-red: #af3029;
+  --canvas-orange: #bc5215;
+  --canvas-yellow: #ad8301;
+  --canvas-green: #66800b;
+  --canvas-cyan: #24837b;
+  --canvas-purple: #5e409d;
+  --callout-default: 32 94 166;
+  --callout-warning: 188 82 21;
+  --callout-quote: 158 158 158;
+  --highlight: rgb(247 209 61 / 0.3);
   --topbar-height: 64px;
   --radius-s: 4px;
   --radius-m: 8px;
@@ -38,24 +46,32 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #282828;
-  --surface: #282828;
-  --surface-strong: #1e2021;
-  --surface-active: #3e393780;
-  --ink: #fbf1c7;
-  --ink-soft: #bdae93;
-  --ink-faint: #7c6f64;
-  --line: #3c3836;
-  --line-strong: #665c54;
-  --primary: #d65d0e;
-  --primary-strong: #fe8019;
-  --accent: #d79921;
-  --focus: #fe8019;
-  --scrim: rgb(30 32 33 / 0.72);
-  --canvas-dot: #504945;
-  --callout-default: 131 165 152;
-  --callout-warning: 254 128 25;
+  --bg: #100f0f;
+  --surface: #100f0f;
+  --surface-strong: #1c1b1a;
+  --surface-active: rgb(254 252 240 / 0.05);
+  --ink: #cecdc3;
+  --ink-soft: #878580;
+  --ink-faint: #575653;
+  --line: #282726;
+  --line-hover: #343331;
+  --line-strong: #403e3c;
+  --primary: hsl(175 49% 51%);
+  --primary-strong: #3aa99f;
+  --accent: #d0a215;
+  --focus: hsl(175 49% 51%);
+  --scrim: rgb(16 15 15 / 0.72);
+  --canvas-dot: #343331;
+  --canvas-red: #d14d41;
+  --canvas-orange: #da702c;
+  --canvas-yellow: #d0a215;
+  --canvas-green: #879a39;
+  --canvas-cyan: #3aa99f;
+  --canvas-purple: #8b7ec8;
+  --callout-default: 67 133 190;
+  --callout-warning: 218 112 44;
   --callout-quote: 158 158 158;
+  --highlight: rgb(213 159 17 / 0.3);
 }
 
 * {
@@ -316,7 +332,7 @@ svg {
 }
 
 .canvas-node:hover {
-  border-color: var(--ink-faint);
+  border-color: var(--line-hover);
 }
 
 .canvas-node.is-selected {
@@ -459,7 +475,7 @@ svg {
 
 .markdown mark {
   padding: 0;
-  background: rgb(215 153 33 / 0.4);
+  background: var(--highlight);
   color: inherit;
 }
 

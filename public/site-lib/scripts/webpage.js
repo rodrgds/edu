@@ -42,12 +42,12 @@
   };
 
   const canvasColors = {
-    "1": "#cc241d",
-    "2": "#d65d0e",
-    "3": "#d79921",
-    "4": "#98971a",
-    "5": "#689d6a",
-    "6": "#b16286",
+    "1": "var(--canvas-red)",
+    "2": "var(--canvas-orange)",
+    "3": "var(--canvas-yellow)",
+    "4": "var(--canvas-green)",
+    "5": "var(--canvas-cyan)",
+    "6": "var(--canvas-purple)",
   };
 
   function setTheme(theme, persist = false) {
