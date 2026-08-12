@@ -5,6 +5,10 @@
   const CANVAS_URL = "content/main.canvas";
   const SVG_NS = "http://www.w3.org/2000/svg";
   const GRID_SIZE = 10;
+  const GRID_HIDE_SCALE = 0.45;
+  const GRID_SHOW_SCALE = 0.55;
+  const OVERVIEW_ENTER_SCALE = 0.24;
+  const OVERVIEW_EXIT_SCALE = 0.28;
   const WHEEL_ZOOM_RATE = 0.0014;
   const MAX_WHEEL_ZOOM_DELTA = 80;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -39,6 +43,7 @@
     pointers: new Map(),
     gesture: null,
     animationFrame: 0,
+    viewFrame: 0,
   };
 
   const canvasColors = {
@@ -609,15 +614,36 @@
 
   function applyView(announce = false) {
     const { x, y, scale } = state.view;
-    elements.world.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
-    elements.world.classList.toggle("is-overview", scale < 0.24);
+    elements.world.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    const wasOverview = elements.world.classList.contains("is-overview");
+    const isOverview = wasOverview ? scale < OVERVIEW_EXIT_SCALE : scale < OVERVIEW_ENTER_SCALE;
+    elements.world.classList.toggle("is-overview", isOverview);
     elements.zoom.value = `${Math.round(scale * 100)}%`;
     elements.zoom.textContent = elements.zoom.value;
-    const grid = GRID_SIZE * scale;
-    elements.viewport.style.backgroundSize = `${grid}px ${grid}px`;
-    elements.viewport.style.backgroundPosition = `${x % grid}px ${y % grid}px`;
+    const wasGridHidden = elements.viewport.classList.contains("is-grid-hidden");
+    const hideGrid = wasGridHidden ? scale < GRID_SHOW_SCALE : scale < GRID_HIDE_SCALE;
+    elements.viewport.classList.toggle("is-grid-hidden", hideGrid);
+    if (!hideGrid) {
+      const grid = GRID_SIZE * scale;
+      elements.viewport.style.backgroundSize = `${grid}px ${grid}px`;
+      elements.viewport.style.backgroundPosition = `${x % grid}px ${y % grid}px`;
+    }
     updateMinimapViewport();
     if (announce) elements.liveStatus.textContent = `Zoom ${Math.round(scale * 100)} percent`;
+  }
+
+  function scheduleViewUpdate() {
+    if (state.viewFrame) return;
+    state.viewFrame = requestAnimationFrame(() => {
+      state.viewFrame = 0;
+      applyView();
+    });
+  }
+
+  function flushViewUpdate() {
+    if (state.viewFrame) cancelAnimationFrame(state.viewFrame);
+    state.viewFrame = 0;
+    applyView();
   }
 
   function markInteraction() {
@@ -737,8 +763,13 @@
 
     elements.viewport.addEventListener("pointerdown", (event) => {
       if (event.target.closest("a, button, input, iframe")) return;
+      if (event.pointerType !== "mouse") event.preventDefault();
       cancelViewAnimation();
-      elements.viewport.setPointerCapture(event.pointerId);
+      try {
+        elements.viewport.setPointerCapture(event.pointerId);
+      } catch {
+        // The pointer may already have ended before capture on older mobile browsers.
+      }
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (state.pointers.size === 1) {
         state.gesture = {
@@ -768,6 +799,7 @@
 
     elements.viewport.addEventListener("pointermove", (event) => {
       if (!state.pointers.has(event.pointerId) || !state.gesture) return;
+      event.preventDefault();
       state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
       if (state.gesture.type === "pan" && state.pointers.size === 1) {
         const dx = event.clientX - state.gesture.startX;
@@ -775,7 +807,7 @@
         if (Math.hypot(dx, dy) > 3) state.gesture.moved = true;
         state.view.x = state.gesture.viewX + dx;
         state.view.y = state.gesture.viewY + dy;
-        applyView();
+        scheduleViewUpdate();
       } else if (state.pointers.size >= 2) {
         const [a, b] = [...state.pointers.values()];
         const distance = Math.max(1, Math.hypot(b.x - a.x, b.y - a.y));
@@ -787,14 +819,16 @@
           x: midX - state.gesture.worldX * scale,
           y: midY - state.gesture.worldY * scale,
         };
-        applyView();
+        scheduleViewUpdate();
       }
       markInteraction();
     });
 
     const endPointer = (event) => {
+      if (!state.pointers.has(event.pointerId)) return;
       const endedGesture = state.gesture;
       state.pointers.delete(event.pointerId);
+      flushViewUpdate();
       if (state.pointers.size === 0) {
         elements.viewport.classList.remove("is-panning");
         if (endedGesture?.type === "pan" && !endedGesture.moved && endedGesture.nodeId) selectNode(endedGesture.nodeId);
@@ -814,6 +848,7 @@
     };
     elements.viewport.addEventListener("pointerup", endPointer);
     elements.viewport.addEventListener("pointercancel", endPointer);
+    elements.viewport.addEventListener("lostpointercapture", endPointer);
   }
 
   function setupKeyboardNavigation() {
@@ -847,16 +882,63 @@
   }
 
   function setupMinimap() {
-    elements.minimap.addEventListener("click", (event) => {
+    let activePointerId = null;
+
+    const moveToPointer = (event, animate = false) => {
       const rect = elements.minimap.getBoundingClientRect();
-      const worldX = (event.clientX - rect.left) / rect.width * state.bounds.width;
-      const worldY = (event.clientY - rect.top) / rect.height * state.bounds.height;
-      animateView({
+      const relativeX = clamp(event.clientX - rect.left, 0, rect.width);
+      const relativeY = clamp(event.clientY - rect.top, 0, rect.height);
+      const worldX = relativeX / rect.width * state.bounds.width;
+      const worldY = relativeY / rect.height * state.bounds.height;
+      const target = {
         ...state.view,
         x: elements.viewport.clientWidth / 2 - worldX * state.view.scale,
         y: elements.viewport.clientHeight / 2 - worldY * state.view.scale,
-      });
+      };
+      if (animate) animateView(target);
+      else {
+        state.view = target;
+        scheduleViewUpdate();
+      }
       markInteraction();
+    };
+
+    elements.minimap.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      cancelViewAnimation();
+      activePointerId = event.pointerId;
+      elements.minimap.classList.add("is-dragging");
+      try {
+        elements.minimap.setPointerCapture(event.pointerId);
+      } catch {
+        // The pointer may already have ended before capture on older mobile browsers.
+      }
+      moveToPointer(event);
+    });
+
+    elements.minimap.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== activePointerId) return;
+      event.preventDefault();
+      moveToPointer(event);
+    });
+
+    const endMinimapPointer = (event) => {
+      if (event.pointerId !== activePointerId) return;
+      activePointerId = null;
+      elements.minimap.classList.remove("is-dragging");
+      flushViewUpdate();
+    };
+
+    elements.minimap.addEventListener("pointerup", endMinimapPointer);
+    elements.minimap.addEventListener("pointercancel", endMinimapPointer);
+    elements.minimap.addEventListener("lostpointercapture", endMinimapPointer);
+    elements.minimap.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key)) return;
+      event.preventDefault();
+      fitAll();
+    });
+    elements.minimap.addEventListener("click", (event) => {
+      if (event.detail === 0) fitAll();
     });
   }
 

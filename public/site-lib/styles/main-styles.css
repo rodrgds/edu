@@ -271,6 +271,10 @@ svg {
   overscroll-behavior: none;
 }
 
+.canvas-viewport.is-grid-hidden {
+  background-image: none;
+}
+
 .canvas-viewport.is-panning {
   cursor: grabbing;
   user-select: none;
@@ -283,7 +287,13 @@ svg {
   width: 1px;
   height: 1px;
   transform-origin: 0 0;
-  will-change: transform;
+}
+
+.canvas-world,
+.canvas-nodes,
+.canvas-node,
+.node-body {
+  touch-action: none;
 }
 
 .canvas-edges,
@@ -768,7 +778,13 @@ kbd {
   border: 1px solid var(--line);
   border-radius: var(--radius-m);
   background: var(--bg);
-  cursor: crosshair;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.minimap.is-dragging {
+  cursor: grabbing;
 }
 
 .minimap:hover {
