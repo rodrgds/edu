@@ -8,7 +8,7 @@ Pushes to `main` are deployed automatically by the Git-integrated Cloudflare Pag
 
 GitHub also runs `.github/workflows/deploy.yml` as an independent verification check. Keep the GitHub and Cloudflare gates pointed at the same `scripts/verify-site.sh` entrypoint so their acceptance criteria cannot drift.
 
-Production analytics use the self-hosted Umami instance at `analytics.rgo.pt` with website ID `01ab2edc-295f-49be-847c-c5d864a59106`. Keep `data-domains="edu.rgo.pt"` on the tracker so Pages previews and local development do not pollute production analytics, and keep the matching script/connect origins in `public/_headers`.
+Production analytics use the self-hosted Umami instance at `cool.rgo.pt` with website ID `01ab2edc-295f-49be-847c-c5d864a59106`. Keep `data-domains="edu.rgo.pt"` on the tracker so Pages previews and local development do not pollute production analytics, and keep the matching script/connect origins in `public/_headers`.
 
 This site has no package manager, Docker build, or Devenv environment, so adding those only for cache uniformity would slow the current sub-minute verification. If a build tool is introduced, declare it with Devenv/Nix, use its frozen lockfile, and add dependency/build caching keyed by all lock and environment inputs. Validate workflow edits with `actionlint` and confirm both the Cloudflare deployment and the public custom domain after deployment.
 
